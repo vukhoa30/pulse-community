@@ -20,15 +20,18 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
         return t && new Webhooks().invoke(t, payload);
     }
 
-        var url = "http://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" + 
+        var url = "https://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" + 
         constants.JenkinsURL + '/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)';
 
         request.get({url:url, insecure: true}, function(err, response, body) {
+            console.log('first response:')
+            console.log(err, body, response && response.statusCode)
+
             if(!err) {
                 var crumb = body.split(":")[1];
 
-                var joburl = "http://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" + 
-                        constants.JenkinsURL + "/job/" + constants.JenkinsJobName + "/build?token=" + constants.JenkinsJobToken;
+                var joburl = "https://" + constants.JenkinsUserName + ":" + constants.JenkinsAPIToken + "@" + 
+                        constants.JenkinsURL + "/job/" + encodeURI(constants.JenkinsJobName) + "/build?token=" + constants.JenkinsJobToken;
                 var opts = {
                     url: joburl,
                     insecure: true,
@@ -39,6 +42,9 @@ exports.handler = function ({ event: body, constants, triggers }, context, callb
                 };
 
                 request.post(opts, function(err, res, bd) {
+                    console.log('second response:')
+                    console.log(err, bd, res && res.statusCode)
+
                     if(!err) {
                         emitEvent('ChatOpsEvent', { message: "Jenkins Build just kicked off for project: " + constants.JenkinsJobName });
                     }
